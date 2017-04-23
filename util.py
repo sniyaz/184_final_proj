@@ -5,9 +5,7 @@ import numpy as np
 import sys
 
 
-if __name__ == "__main__":
-
-    mesh_name = sys.argv[1]
+def extract_mesh_points(mesh_filename):
     mesh_data = open(mesh_name, "rb+")
     mesh = collada.Collada(mesh_data)
     triangles = [i for i in mesh.geometries[0].primitives[0]]
@@ -24,7 +22,6 @@ if __name__ == "__main__":
     #Hack to estimate each normal as pointing outward from center.
     normal_list = [v - centroid for v in vertex_list] 
 
-    pdb.set_trace()
-    
+    return vertex_list, normal_list 
 
 
