@@ -6,7 +6,7 @@ import sys
 
 
 def extract_mesh_points(mesh_filename):
-    mesh_data = open(mesh_name, "rb+")
+    mesh_data = open(mesh_filename, "rb+")
     mesh = collada.Collada(mesh_data)
     triangles = [i for i in mesh.geometries[0].primitives[0]]
 
@@ -20,8 +20,8 @@ def extract_mesh_points(mesh_filename):
     centroid = sum(vertex_list)
     centroid = centroid/len(vertex_list)
     #Hack to estimate each normal as pointing outward from center.
-    normal_list = [v - centroid for v in vertex_list] 
+    normal_dict = {tuple(v) : v - centroid for v in vertex_list}
 
-    return vertex_list, normal_list 
+    return vertex_list, normal_dict 
 
 
