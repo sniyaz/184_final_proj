@@ -5,8 +5,7 @@ import numpy as np
 import sys
 import random
 from sklearn.neighbors import KDTree
-from scipy.optimize import minimize
-from util import extract_mesh_points
+from util import extract_mesh_points, trilaterate
 
 
 def get_seed_set(vertex_list, normal_dict, kd_tree):
@@ -55,7 +54,7 @@ def pivot(point_1, point_2, ball_center, ball_radius, kd_tree):
 def get_triangle_ball(p1, p2, p3, normal_dict, ball_radius):
     """
     Returns center of ball of given radius that touches all three points given.
-    Note: The analytic solution is sort of horrible. We use optimization here instead.
+    Note: Uses intersection of three spheres.
     """
     tri_normal = np.cross(p2 - p1, p3 - p1)
     tri_normal = tri_normal/np.linalg.norm(tri_normal)
@@ -63,20 +62,12 @@ def get_triangle_ball(p1, p2, p3, normal_dict, ball_radius):
     if np.dot(tri_normal, normal_dict[tuple(p1)]) < 0:
         tri_normal = -tri_normal
     
-    def alignment_func(x):
-        offset_1 = abs(np.linalg.norm(x - p1) - radius)
-        offset_2 = abs(np.linalg.norm(x - p2) - radius)
-        offset_3 = abs(np.linalg.norm(x - p3) - radius)
-        return offset_1 + offset_2 + offset_3
+    intersect_1, intersect_2 = trilaterate(p1, p2, p3, ball_radius, ball_radius, ball_radius)
     
-    #Use offset from centroid to initialize optimization.
-    init_center = sum([p1, p2, p3])/3.0
-    init_center = init_center + ball_radius*tri_normal
-
-    res = minimize(alignment_func, init_center, method='nelder-mead', options={'xtol': 0.0, 'fatol': 0.0, 'disp': True, 'maxiter': 10000000000000})
-    found_center = res.x
-    if np.dot(tri_normal, found_center) < 0:
-        found_center = -found_center
+    found_center = intersect_1
+    if np.dot(tri_normal, found_center - p1) < 0:
+        found_center = intersect_2
+    
     return found_center
 
 
@@ -85,7 +76,7 @@ if __name__ == "__main__":
     mesh_filename = sys.argv[1]
     vertex_list, normal_dict = extract_mesh_points(mesh_filename)
     #TODO: Move this as a command line argument!
-    radius = 0.2
+    radius = 2.0
     kd_tree = KDTree(np.array(vertex_list))
     
     seed_set = get_seed_set(vertex_list, normal_dict, kd_tree)
